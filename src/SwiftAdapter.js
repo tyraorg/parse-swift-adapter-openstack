@@ -16,6 +16,7 @@ function SwiftAdapter(options) {
         tenantId: options.tenantId,
         authUrl: options.authUrl,
         baseUrl: this.baseUrl,
+        userId: options.userId,
         username: options.username,
         password: options.password
     });

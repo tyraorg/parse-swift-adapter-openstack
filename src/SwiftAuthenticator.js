@@ -21,6 +21,7 @@ function SwiftAuthenticator(options) {
     this.tenantId = options.tenantId;
     this.authUrl = options.authUrl;
     this.baseUrl = options.baseUrl;
+    this.userId = options.userId;
     this.username = options.username;
     this.password = options.password;
 
@@ -56,10 +57,7 @@ SwiftAuthenticator.prototype._authenticate = function() {
                     ],
                     password: {
                         user: {
-                            domain: {
-                                id: "default"
-                            },
-                            name: this.username,
+                            id: this.userId,
                             password: this.password
                         }
                     }
@@ -76,8 +74,8 @@ SwiftAuthenticator.prototype._authenticate = function() {
         }
     })
     .then((response) => {
+        logger.info('response: ' + JSON.stringify(response))
         if (response.statusCode === 200) {
-            logger.info('response: ' + JSON.stringify(response))
             this.tokenId = response.body.access.token.id;
             this.authState = AUTH_STATE.AUTHENTICATED;
             this.authError = null;
