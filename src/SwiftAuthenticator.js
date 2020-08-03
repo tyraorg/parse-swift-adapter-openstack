@@ -50,16 +50,34 @@ SwiftAuthenticator.prototype._authenticate = function() {
         simple: false,
         body: {
             auth: {
-                tenantId: this.tenantId,
-                passwordCredentials: {
-                    username: this.username,
-                    password: this.password
+                identity: {
+                    methods: [
+                        "password"
+                    ],
+                    password: {
+                        user: {
+                            domain: {
+                                id: "default"
+                            },
+                            name: this.username,
+                            password: this.password
+                        }
+                    }
+                },
+                scope: {
+                    project: {
+                        domain: {
+                            id: "default"
+                        },
+                        name: this.tenantId,
+                    }
                 }
             }
         }
     })
     .then((response) => {
         if (response.statusCode === 200) {
+            logger.info('response: ' + JSON.stringify(response))
             this.tokenId = response.body.access.token.id;
             this.authState = AUTH_STATE.AUTHENTICATED;
             this.authError = null;
