@@ -9,15 +9,14 @@ const SwiftAuthenticator = require('./SwiftAuthenticator');
 const logger = require('winston');
 
 function SwiftAdapter(options) {
-    this.baseUrl = options.baseUrl + '/AUTH_' + options.tenantId + '/' + options.container;
+    this.baseUrl = options.baseUrl + '/AUTH_' + options.projectId + '/' + options.container;
     this.directAccess = options.directAccess || false;
 
     this.authenticator = new SwiftAuthenticator({
-        tenantId: options.tenantId,
+        projectId: options.projectId,
         authUrl: options.authUrl,
         baseUrl: this.baseUrl,
         userId: options.userId,
-        username: options.username,
         password: options.password
     });
 }

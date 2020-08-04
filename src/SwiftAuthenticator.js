@@ -15,14 +15,12 @@ const AUTH_EVENT = 'authentication';
 
 function SwiftAuthenticator(options) {
     EventEmitter.call(this);
-
     logger.info('SwiftAuthenticator():', options);
 
-    this.tenantId = options.tenantId;
+    this.projectId = options.projectId;
     this.authUrl = options.authUrl;
     this.baseUrl = options.baseUrl;
     this.userId = options.userId;
-    this.username = options.username;
     this.password = options.password;
 
     this.authState = AUTH_STATE.UNAUTHENTICATED;
@@ -64,43 +62,39 @@ SwiftAuthenticator.prototype._authenticate = function() {
                 },
                 scope: {
                     project: {
-                        domain: {
-                            id: "default"
-                        },
-                        name: this.tenantId,
+                        id: this.projectId
                     }
                 }
             }
         }
     })
-    .then((response) => {
-        logger.info('response: ' + JSON.stringify(response))
-        if (response.statusCode === 200) {
-            this.tokenId = response.body.access.token.id;
-            this.authState = AUTH_STATE.AUTHENTICATED;
-            this.authError = null;
-            this.emit(AUTH_EVENT);
+        .then((response) => {
+            if (response.statusCode === 201) {
+                this.tokenId = response.headers["x-subject-token"];
+                this.authState = AUTH_STATE.AUTHENTICATED;
+                this.authError = null;
+                this.emit(AUTH_EVENT);
 
-            logger.info('SwiftAuthenticator._authenticate(): new auth token was created');
-        } else {
+                logger.info('SwiftAuthenticator._authenticate(): new auth token was created');
+            } else {
+                this.tokenId = null;
+                this.authState = AUTH_STATE.FAILED;
+                this.authError = response.statusCode + ' - ' + response.statusMessage;
+                this.emit(AUTH_EVENT);
+
+                logger.error('SwiftAuthenticator._authenticate(): auth failed with error %d %s',
+                    response.statusCode, response.statusMessage);
+            }
+            this.isAuthenticating = false;
+        })
+        .catch((err) => {
             this.tokenId = null;
             this.authState = AUTH_STATE.FAILED;
-            this.authError = response.statusCode + ' - ' + response.statusMessage;
-            this.emit(AUTH_EVENT);
+            this.authError = err;
+            this.isAuthenticating = false;
 
-            logger.error('SwiftAuthenticator._authenticate(): auth failed with error %d %s',
-                response.statusCode, response.statusMessage);
-        }
-        this.isAuthenticating = false;
-    })
-    .catch((err) => {
-        this.tokenId = null;
-        this.authState = AUTH_STATE.FAILED;
-        this.authError = err;
-        this.isAuthenticating = false;
-
-        logger.error('SwiftAuthenticator._authenticate() - auth failed', err);
-    });
+            logger.error('SwiftAuthenticator._authenticate() - auth failed', err);
+        });
 };
 
 SwiftAuthenticator.prototype._validateToken = function() {
