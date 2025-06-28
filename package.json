@@ -1,21 +1,15 @@
 {
   "name": "parse-server-swift-adapter",
-  "version": "0.0.1",
-  "main": "index.js",
-  "author": "Anders Bohlin (anders.bohlin@salientpoint.com)",
-  "license": "MIT",
-  "dependencies": {
-    "request": "^2.83.0",
-    "request-promise-native": "^1.0.5",
-    "winston": "^2.4.0"
-  },
-  "devDependencies": {
-    "chai": "^4.1.2",
-    "chai-as-promised": "^7.1.1",
-    "mocha": "^4.0.1",
-    "nock": "^9.1.0"
-  },
+  "version": "0.0.2",
+  "main": "dist/SwiftAdapter.js",
+  "description": "Parse OpenStack Swift adapter",
+  "types": "dist/SwiftAdapter.d.ts",
   "scripts": {
-    "test": "mocha"
+    "build": "tsc"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^24.0.6",
+    "typescript": "^5.8.3"
   }
 }
