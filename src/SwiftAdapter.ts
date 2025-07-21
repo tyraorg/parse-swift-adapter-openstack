@@ -44,7 +44,7 @@ export default class SwiftAdapter {
     filename: string,
     data: Buffer | string,
     contentType?: string,
-    options?: Record<string, string>
+    options?: Record<string, any>
   ): Promise<void> {
     const token = await this.authenticator.authenticate();
     const res = await fetch(`${this.baseUrl}/${filename}`, {
