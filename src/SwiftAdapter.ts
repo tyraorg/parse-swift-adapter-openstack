@@ -38,11 +38,13 @@ export default class SwiftAdapter {
    * @param filename   Name of the file (within the container)
    * @param data       Buffer or string content
    * @param contentType Optional MIME type, e.g. "image/png"
+   * @param options Any optional SWIFT API request headers
    */
   public async createFile(
     filename: string,
     data: Buffer | string,
-    contentType?: string
+    contentType?: string,
+    options?: Record<string, string>
   ): Promise<void> {
     const token = await this.authenticator.authenticate();
     const res = await fetch(`${this.baseUrl}/${filename}`, {
@@ -50,6 +52,7 @@ export default class SwiftAdapter {
       headers: {
         'X-Auth-Token': token,
         ...(contentType && {'Content-Type': contentType}),
+        ...options
       },
       body: data,
     });
