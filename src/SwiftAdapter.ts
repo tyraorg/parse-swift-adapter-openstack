@@ -151,7 +151,7 @@ export default class SwiftAdapter {
     const res = await this.authFetchWithRetry(url, {
       method: 'PUT',
       headers,
-      body: data,
+      body: this.toBody(data),
     }, {allowPutRetry503: true, reqId});
 
     const bodyText = await safeText(res);
@@ -353,6 +353,13 @@ export default class SwiftAdapter {
 
   private log(level: 'debug' | 'info' | 'warn' | 'error', msg: string, fields?: Record<string, unknown>) {
     this.logger.log(level, msg, fields);
+  }
+
+  // Normalize Buffer|string to a BodyInit-compatible type
+  private toBody(data: Buffer | string): BodyInit {
+    if (typeof data === 'string') return data;
+    // Buffer is a Uint8Array; returning a new Uint8Array is always BodyInit
+    return new Uint8Array(data);
   }
 }
 
