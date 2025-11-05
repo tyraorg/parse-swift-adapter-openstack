@@ -1,9 +1,13 @@
 {
-  "name": "parse-server-swift-adapter",
-  "version": "0.0.2",
+  "name": "@tyraorg/parse-server-swift-adapter",
+  "version": "0.0.0",
   "main": "dist/SwiftAdapter.js",
   "description": "Parse OpenStack Swift adapter",
   "types": "dist/SwiftAdapter.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tyraorg/parse-swift-adapter-openstack.git"
+  },
   "scripts": {
     "build": "tsc"
   },
