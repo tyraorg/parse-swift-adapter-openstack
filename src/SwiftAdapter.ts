@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import SwiftAuthenticator from './SwiftAuthenticator.js';
 import {fetchWithRetry} from './http.js';
+import {Readable} from "node:stream";
 
 /** Structured logger interface (JSON lines). */
 export interface Logger {
@@ -296,6 +297,37 @@ export default class SwiftAdapter {
     return `${config.mount}/files/${config.applicationId}/${encoded}`;
   }
 
+  /**
+   * NEW: Upload a file to Swift as a STREAM (no buffering)
+   */
+  public async createFileStream(
+    filename: string,
+    stream: Readable | NodeJS.ReadableStream,
+    options: CreateFileOptions = {},
+  ): Promise<ObjectMeta> {
+    const url = `${this.baseUrl}/${encodeURIComponent(filename)}`;
+    const reqId = this.newRequestId();
+    const headers: Record<string,string> = {
+      ...(options.contentType ? {'Content-Type': options.contentType} : {}),
+      ...(options.headers ?? {}),
+    };
+    if (options.etagHex) {
+      headers['ETag'] = options.etagHex;
+    }
+    if (options.conditional === true) headers['If-None-Match'] = '*';
+    else if (typeof options.conditional === 'string') headers['If-Match'] = options.conditional;
+    this.log('info','swift.put.stream.begin',{reqId,filename,url});
+    const res = await this.authFetchWithRetry(url,{
+      method:'PUT',
+      headers,
+      body:stream as any,
+    },{reqId});
+    const txt = await safeText(res);
+    this.log('info','swift.put.stream.end',{reqId,filename,status:res.status,body:txt?.slice(0,200)});
+    if(res.status===201) return extractMeta(res);
+    throw httpError(`Swift PUT stream failed ${res.status}`,res,{reqId,filename});
+  }
+
   // ===== Internals ==========================================================
 
   private async authFetchWithRetry(
@@ -306,7 +338,7 @@ export default class SwiftAdapter {
     const reqId = opts?.reqId ?? this.newRequestId();
     const token = await this.authenticator.getToken();
 
-    const withAuth: RequestInit = {
+    const withAuth: any = {
       ...init,
       headers: {
         ...(init.headers ?? {}),
@@ -314,7 +346,11 @@ export default class SwiftAdapter {
       },
     };
 
-    // Allow idempotent retries by default. For PUT we only force retries on 503.
+    // If streaming - ensure Node fetch duplex is present
+    if (withAuth.body && typeof withAuth.body === 'object') {
+      withAuth.duplex = 'half';
+    }
+
     const policy = {
       forceRetryMethods: opts?.allowPutRetry503 ? {PUT: [503]} : {},
     };
@@ -326,18 +362,24 @@ export default class SwiftAdapter {
       this.authenticator.invalidate();
       const fresh = await this.authenticator.getToken();
 
-      const retryInit: RequestInit = {
+      const retryInit: any = {
         ...init,
         headers: {
           ...(init.headers ?? {}),
           'X-Auth-Token': fresh,
         },
       };
+
+      if (retryInit.body && typeof retryInit.body === 'object') {
+        retryInit.duplex = 'half';
+      }
+
       res = await fetchWithRetry(url, retryInit, policy);
     }
 
     return res;
   }
+
 
   private computeMD5Hex(data: Buffer | string): string {
     const h = crypto.createHash('md5');
