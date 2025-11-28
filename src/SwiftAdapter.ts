@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import SwiftAuthenticator from './SwiftAuthenticator.js';
-import {fetchWithRetry} from './http.js';
+import {fetchWithRetry, RetryPolicy} from './http.js';
 import {Readable} from "node:stream";
 
 /** Structured logger interface (JSON lines). */
@@ -351,8 +351,9 @@ export default class SwiftAdapter {
       withAuth.duplex = 'half';
     }
 
-    const policy = {
+    const policy: RetryPolicy = {
       forceRetryMethods: opts?.allowPutRetry503 ? {PUT: [503]} : {},
+      attemptTimeoutMs: 120_000 // 2 min timeout
     };
 
     let res = await fetchWithRetry(url, withAuth, policy);
